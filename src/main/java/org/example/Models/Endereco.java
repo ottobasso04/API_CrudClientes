@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 @Embeddable // 1. Define esta classe como "embutível"
 public class Endereco {
 
-    // 2. Movemos as validações de 'Cliente' para cá
     @NotBlank(message = "O CEP é obrigatório")
     @Size(min = 8, max = 8, message = "O CEP deve conter 8 dígitos (apenas números)")
     private String cep;
@@ -15,7 +14,7 @@ public class Endereco {
     @NotBlank(message = "O logradouro é obrigatório")
     private String logradouro;
 
-    private String complemento; // Campo útil que faltava
+    private String complemento;
 
     @NotBlank(message = "O bairro é obrigatório")
     private String bairro;
