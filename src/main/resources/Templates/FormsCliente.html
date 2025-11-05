@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org"
+      th:decorate="~{Layout}">
+<head>
+    <title>Formulário de Cadastro de Cliente</title>
+</head>
+<body>
+
+<main th:fragment="conteudo">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+
+            <h3 th:if="${cliente.id == null}">Novo Cliente</h3>
+            <h3 th:if="${cliente.id != null}">Editar Cliente</h3>
+            <hr>
+
+            <form th:action="@{/clientes/salvar}" th:object="${cliente}" method="POST">
+                <input type="hidden" th:field="*{id}" />
+
+                <h5>Dados Pessoais</h5>
+
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" th:field="*{nome}" id="nome">
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('nome')}"
+                         th:errors="*{nome}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cpf" class="form-label">CPF (só números)</label>
+                        <input type="text" class="form-control" th:field="*{cpf}" id="cpf">
+                        <div class="text-danger"
+                             th:if="${#fields.hasErrors('cpf')}"
+                             th:errors="*{cpf}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="telefone" class="form-label">Telefone (incluir DDD)</label>
+                        <input type="text" class="form-control" th:field="*{telefone}" id="telefone">
+                        <div class="text-danger"
+                             th:if="${#fields.hasErrors('telefone')}"
+                             th:errors="*{telefone}">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h5>Endereço (Preenchimento automático)</h5>
+
+                <div class="mb-3">
+                    <label for="cep" class="form-label">CEP (só números)</label>
+                    <input type="text" class="form-control"
+                           id="cep"
+                           name="endereco.cep"
+                           th:value="*{endereco?.cep}"
+                           maxlength="8" onblur="buscarCep(this.value);">
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('endereco.cep')}"
+                         th:errors="*{endereco.cep}">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="logradouro" class="form-label">Logradouro (Rua, Av.)</label>
+                    <input type="text" class="form-control"
+                           id="logradouro"
+                           name="endereco.logradouro"
+                           th:value="*{endereco?.logradouro}">
+                    <div class="text-danger"
+                         th:if="${#fields.hasErrors('endereco.logradouro')}"
+                         th:errors="*{endereco.logradouro}">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="complemento" class="form-label">Complemento (Apto, Bloco)</label>
+                    <input type="text" class="form-control"
+                           id="complemento"
+                           name="endereco.complemento"
+                           th:value="*{endereco?.complemento}">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-5 mb-3">
+                        <label for="bairro" class="form-label">Bairro</label>
+                        <input type="text" class="form-control"
+                               id="bairro"
+                               name="endereco.bairro"
+                               th:value="*{endereco?.bairro}">
+                        <div class="text-danger"
+                             th:if="${#fields.hasErrors('endereco.bairro')}"
+                             th:errors="*{endereco.bairro}">
+                        </div>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label for="localidade" class="form-label">Cidade</label>
+                        <input type="text" class="form-control"
+                               id="localidade"
+                               name="endereco.localidade"
+                               th:value="*{endereco?.localidade}">
+                        <div class="text-danger"
+                             th:if="${#fields.hasErrors('endereco.localidade')}"
+                             th:errors="*{endereco.localidade}">
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="uf" class="form-label">UF</label>
+                        <input type="text" class="form-control"
+                               id="uf"
+                               name="endereco.uf"
+                               th:value="*{endereco?.uf}"
+                               maxlength="2">
+                        <div class="text-danger"
+                             th:if="${#fields.hasErrors('endereco.uf')}"
+                             th:errors="*{endereco.uf}">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <div class="d-flex justify-content-end">
+                    <a th:href="@{/clientes/listar}" class="btn btn-outline-secondary me-2">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        function buscarCep(cep) {
+            cep = cep.replace(/\D/g, '');
+            if (cep.length !== 8) {
+                return;
+            }
+            setCamposEndereco("...", "...", "...", "...", "...");
+            const url = `/api/cep/${cep}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado.');
+                        limparCamposEndereco();
+                    } else {
+                        setCamposEndereco(
+                            data.logradouro,
+                            data.complemento,
+                            data.bairro,
+                            data.localidade,
+                            data.uf
+                        );
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar CEP:', error);
+                    alert('Não foi possível buscar o CEP.');
+                    limparCamposEndereco();
+                });
+        }
+        function setCamposEndereco(logradouro, complemento, bairro, localidade, uf) {
+            document.getElementById('logradouro').value = logradouro;
+            document.getElementById('complemento').value = complemento;
+            document.getElementById('bairro').value = bairro;
+            document.getElementById('localidade').value = localidade;
+            document.getElementById('uf').value = uf;
+        }
+        function limparCamposEndereco() {
+            setCamposEndereco("", "", "", "", "");
+        }
+    </script>
+</main>
+</body>
+</html>
